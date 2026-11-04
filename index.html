@@ -2075,10 +2075,17 @@
       await fbAuth.signInWithEmailAndPassword(userToEmail(u), p);   // fbStartSession() continues from onAuthStateChanged
     }catch(e){
       const c = (e && e.code) || "";
-      $("loginError").textContent = L(
+      const wrong = ["auth/invalid-credential","auth/user-not-found","auth/wrong-password","auth/invalid-email","auth/missing-password","auth/invalid-login-credentials"];
+      const msg =
+        wrong.indexOf(c) >= 0 ? "Pogrešno korisničko ime ili šifra." :
         c === "auth/network-request-failed" ? "Nema veze sa serverom. Proverite internet." :
         c === "auth/too-many-requests" ? "Previše pokušaja. Sačekajte malo pa pokušajte ponovo." :
-        "Pogrešno korisničko ime ili šifra.");
+        c === "auth/operation-not-allowed" ? "Prijava mejlom i šifrom nije uključena u Firebase-u (Authentication → Sign-in method → Email/Password)." :
+        c === "auth/unauthorized-domain" ? "Ova adresa nije dozvoljena u Firebase-u (Authentication → Settings → Authorized domains)." :
+        c === "auth/user-disabled" ? "Ovaj nalog je isključen u Firebase-u." :
+        (c === "auth/invalid-api-key" || c === "auth/api-key-not-valid.-please-pass-a-valid-api-key.") ? "Firebase ključ u fajlu nije ispravan." :
+        "Prijava nije uspela.";
+      $("loginError").textContent = L(msg) + (c ? "  [" + c + "]" : "");
     }finally{ $("loginBtn").disabled = false; }
   }
   function fbStartSession(user){
@@ -2106,6 +2113,10 @@
   }
   $("logoutBtn").addEventListener("click", ()=>{ if(fbAuth) fbAuth.signOut(); else fbEndSession(); });
   (function startAuth(){
+    const vn = document.createElement("div");
+    vn.style.cssText = "margin-top:8px;font:10px var(--mono);color:#9a9078;text-align:center;";
+    vn.textContent = "verzija 2 · prijava imenom ili mejlom";
+    const card = document.querySelector(".login-card"); if(card) card.appendChild(vn);
     if(fbInit()){
       $("loginScreen").style.visibility = "hidden";        // avoids a flash of the login form for people who are already signed in
       const reveal = ()=>{ $("loginScreen").style.visibility = ""; };
